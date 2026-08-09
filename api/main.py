@@ -36,6 +36,14 @@ def get_db_connection():
     pg_db = os.getenv("POSTGRES_DB", "market_db")
     pg_user = os.getenv("POSTGRES_USER", "market_user")
     pg_pass = os.getenv("POSTGRES_PASSWORD", "market_pass")
+    
+    # Auto-detect cloud SSL requirement (Neon / Render external require SSL)
+    sslmode = os.getenv("POSTGRES_SSLMODE")
+    if not sslmode:
+        if "neon.tech" in pg_host or "render.com" in pg_host:
+            sslmode = "require"
+        else:
+            sslmode = "prefer"
 
     try:
         conn = psycopg2.connect(
@@ -44,6 +52,7 @@ def get_db_connection():
             dbname=pg_db,
             user=pg_user,
             password=pg_pass,
+            sslmode=sslmode,
             cursor_factory=RealDictCursor,
             connect_timeout=10
         )
