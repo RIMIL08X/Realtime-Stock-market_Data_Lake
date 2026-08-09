@@ -11,9 +11,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000").strip()
+
 if not API_BASE_URL.startswith("http://") and not API_BASE_URL.startswith("https://"):
-    API_BASE_URL = f"http://{API_BASE_URL}:8000"
+    if "onrender.com" in API_BASE_URL:
+        API_BASE_URL = f"https://{API_BASE_URL}"
+    else:
+        API_BASE_URL = f"http://{API_BASE_URL}:8000"
 
 # ---------------------------------------------------------
 # Page Setup
@@ -247,7 +251,7 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("### 🔌 PLATFORM HEALTH")
 
 try:
-    health_resp = requests.get(f"{API_BASE_URL}/health", timeout=2)
+    health_resp = requests.get(f"{API_BASE_URL}/health", timeout=10)
     if health_resp.status_code == 200 and health_resp.json().get("status") == "healthy":
         st.sidebar.markdown("""
         <div style="background: rgba(0, 230, 118, 0.1); border: 1px solid rgba(0, 230, 118, 0.3); padding: 12px; border-radius: 10px; color: #00E676; font-size: 13px; font-weight: 600;">
@@ -256,7 +260,7 @@ try:
         """, unsafe_allow_html=True)
     else:
         st.sidebar.warning("API Online, Database initializing...")
-except Exception:
+except Exception as e:
     st.sidebar.error("REST Serving API Offline")
 
 st.sidebar.markdown("---")
