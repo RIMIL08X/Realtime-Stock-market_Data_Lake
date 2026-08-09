@@ -39,7 +39,7 @@ services:
     name: streamlit-dashboard
     env: docker
     dockerfilePath: ./Dockerfile
-    dockerCommand: streamlit run dashboard/app.py --server.port 8501 --server.headless true
+    dockerCommand: streamlit run dashboard/app.py --server.port 8501 --server.headless true --server.fileWatcherType none
     plan: free
     envVars:
       - key: API_BASE_URL
