@@ -126,15 +126,30 @@ class RiskResponse(BaseModel):
 
 @app.get("/health")
 def health_check():
+    pg_host = os.getenv("POSTGRES_HOST", "localhost")
+    pg_db = os.getenv("POSTGRES_DB", "market_db")
+    pg_user = os.getenv("POSTGRES_USER", "market_user")
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("SELECT 1;")
         cur.close()
         conn.close()
-        return {"status": "healthy", "database": "connected", "timestamp": datetime.utcnow().isoformat()}
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "connected_host": pg_host,
+            "connected_db": pg_db,
+            "connected_user": pg_user,
+            "timestamp": datetime.utcnow().isoformat()
+        }
     except Exception as e:
-        return {"status": "unhealthy", "database_error": str(e)}
+        return {
+            "status": "unhealthy",
+            "connected_host": pg_host,
+            "connected_db": pg_db,
+            "database_error": str(e)
+        }
 
 @app.get("/ticks/{symbol}", response_model=List[TickResponse])
 def get_stock_ticks(symbol: str, limit: int = Query(default=100, le=1000)):

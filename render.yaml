@@ -1,9 +1,3 @@
-databases:
-  - name: market-db
-    databaseName: market_db
-    user: market_user
-    plan: free
-
 services:
   # 1. FastAPI REST Serving Layer
   - type: web
@@ -14,27 +8,19 @@ services:
     plan: free
     envVars:
       - key: PORT
-        value: 8000
+        value: "8000"
       - key: POSTGRES_HOST
-        fromDatabase:
-          name: market-db
-          property: host
+        value: "ep-still-heart-a6iddbcp.us-west-2.aws.neon.tech"
       - key: POSTGRES_PORT
-        fromDatabase:
-          name: market-db
-          property: port
+        value: "5432"
       - key: POSTGRES_DB
-        fromDatabase:
-          name: market-db
-          property: database
+        value: "neondb"
       - key: POSTGRES_USER
-        fromDatabase:
-          name: market-db
-          property: user
+        value: "neondb_owner"
       - key: POSTGRES_PASSWORD
-        fromDatabase:
-          name: market-db
-          property: password
+        value: "npg_9mbkxBlLq2CQ"
+      - key: POSTGRES_SSLMODE
+        value: "require"
 
   # 2. Streamlit Dashboard
   - type: web
@@ -45,7 +31,7 @@ services:
     plan: free
     envVars:
       - key: PORT
-        value: 8501
+        value: "8501"
       - key: API_BASE_URL
         fromService:
           type: web
