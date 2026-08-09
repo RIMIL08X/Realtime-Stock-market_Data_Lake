@@ -1,0 +1,158 @@
+networks:
+  platform-net:
+    driver: bridge
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: zookeeper
+    networks:
+      - platform-net
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: "ruok,srvr"
+    healthcheck:
+      test: ["CMD-SHELL", "cub zk-ready localhost 2181"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    networks:
+      - platform-net
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  postgres:
+    image: postgres:16.3
+    container_name: postgres
+    networks:
+      - platform-net
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: market_db
+      POSTGRES_USER: market_user
+      POSTGRES_PASSWORD: market_pass
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U market_user -d market_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  spark-master:
+    image: apache/spark:3.5.3
+    container_name: spark-master
+    networks:
+      - platform-net
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    environment:
+      - SPARK_MODE=master
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  spark-worker:
+    image: apache/spark:3.5.3
+    container_name: spark-worker
+    depends_on:
+      spark-master:
+        condition: service_healthy
+    networks:
+      - platform-net
+    ports:
+      - "8081:8081"
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=4G
+      - SPARK_WORKER_CORES=4
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: financial-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - platform-net
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=market_db
+      - POSTGRES_USER=market_user
+      - POSTGRES_PASSWORD=market_pass
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: streamlit-dashboard
+    depends_on:
+      api:
+        condition: service_started
+    networks:
+      - platform-net
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://api:8000
+    command: streamlit run dashboard/app.py --server.port 8501 --server.headless true
+
+  producer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: market-producer
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - platform-net
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - TWELVE_DATA_API_KEY=f4d4870f17ac47b5853dae067132eb5e
+    command: python -m producer.market_data_producer --ignore-market-hours

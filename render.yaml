@@ -1,0 +1,50 @@
+services:
+  # 1. PostgreSQL Managed Database
+  - type: postgres
+    name: market-db
+    databaseName: market_db
+    user: market_user
+    plan: free
+
+  # 2. FastAPI REST Serving Layer
+  - type: web
+    name: financial-api
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: uvicorn api.main:app --host 0.0.0.0 --port 8000
+    plan: free
+    envVars:
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: market-db
+          property: host
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: market-db
+          property: port
+      - key: POSTGRES_DB
+        fromDatabase:
+          name: market-db
+          property: database
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: market-db
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: market-db
+          property: password
+
+  # 3. Streamlit Dashboard
+  - type: web
+    name: streamlit-dashboard
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: streamlit run dashboard/app.py --server.port 8501 --server.headless true
+    plan: free
+    envVars:
+      - key: API_BASE_URL
+        fromService:
+          type: web
+          name: financial-api
+          property: url
