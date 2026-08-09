@@ -11,9 +11,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000").strip()
+API_BASE_URL = os.getenv("API_BASE_URL", "https://financial-api-mwp5.onrender.com").strip()
 
-if not API_BASE_URL.startswith("http://") and not API_BASE_URL.startswith("https://"):
+if API_BASE_URL.lower() == "financial-api":
+    API_BASE_URL = "https://financial-api-mwp5.onrender.com"
+elif not API_BASE_URL.startswith("http://") and not API_BASE_URL.startswith("https://"):
     if "onrender.com" in API_BASE_URL:
         API_BASE_URL = f"https://{API_BASE_URL}"
     else:
