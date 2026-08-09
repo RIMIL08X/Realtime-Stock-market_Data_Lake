@@ -2,10 +2,11 @@ import os
 import logging
 from typing import List, Optional
 from datetime import date, datetime
+from decimal import Decimal
 
-from fastapi import FastAPI, HTTPException, Query, Depends
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
@@ -43,12 +44,25 @@ def get_db_connection():
             dbname=pg_db,
             user=pg_user,
             password=pg_pass,
-            cursor_factory=RealDictCursor
+            cursor_factory=RealDictCursor,
+            connect_timeout=10
         )
         return conn
     except Exception as e:
-        logger.error(f"Failed connecting to database: {e}")
+        logger.error(f"Failed connecting to database ({pg_host}:{pg_port}): {e}")
         raise HTTPException(status_code=500, detail=f"Database connection error: {str(e)}")
+
+def clean_dict_rows(rows):
+    cleaned = []
+    for row in rows:
+        item = {}
+        for k, v in row.items():
+            if isinstance(v, Decimal):
+                item[k] = float(v)
+            else:
+                item[k] = v
+        cleaned.append(item)
+    return cleaned
 
 # Pydantic Schemas
 class TickResponse(BaseModel):
@@ -119,15 +133,15 @@ def get_stock_ticks(symbol: str, limit: int = Query(default=100, le=1000)):
     cur = conn.cursor()
     cur.execute("""
         SELECT symbol, timestamp, open, high, low, close, volume, quality_flag, processed_at
-        SELECT_FROM: silver.cleaned_stock_ticks
+        FROM silver.cleaned_stock_ticks
         WHERE UPPER(symbol) = UPPER(%s)
         ORDER BY timestamp DESC
         LIMIT %s;
-    """.replace("SELECT_FROM:", "FROM"), (symbol, limit))
+    """, (symbol, limit))
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return rows
+    return clean_dict_rows(rows)
 
 @app.get("/returns/{symbol}", response_model=List[DailyReturnResponse])
 def get_daily_returns(symbol: str, limit: int = Query(default=100, le=1000)):
@@ -143,7 +157,7 @@ def get_daily_returns(symbol: str, limit: int = Query(default=100, le=1000)):
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return rows
+    return clean_dict_rows(rows)
 
 @app.get("/ma/{symbol}", response_model=List[MovingAverageResponse])
 def get_moving_averages(symbol: str, limit: int = Query(default=100, le=1000)):
@@ -159,7 +173,7 @@ def get_moving_averages(symbol: str, limit: int = Query(default=100, le=1000)):
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return rows
+    return clean_dict_rows(rows)
 
 @app.get("/volatility/{symbol}", response_model=List[VolatilityResponse])
 def get_volatility_metrics(symbol: str, limit: int = Query(default=100, le=1000)):
@@ -175,7 +189,7 @@ def get_volatility_metrics(symbol: str, limit: int = Query(default=100, le=1000)
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return rows
+    return clean_dict_rows(rows)
 
 @app.get("/sharpe/{symbol}", response_model=List[SharpeResponse])
 def get_sharpe_metrics(symbol: str, limit: int = Query(default=100, le=1000)):
@@ -191,7 +205,7 @@ def get_sharpe_metrics(symbol: str, limit: int = Query(default=100, le=1000)):
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return rows
+    return clean_dict_rows(rows)
 
 @app.get("/risk/{symbol}", response_model=List[RiskResponse])
 def get_risk_metrics(symbol: str, limit: int = Query(default=100, le=1000)):
@@ -207,4 +221,4 @@ def get_risk_metrics(symbol: str, limit: int = Query(default=100, le=1000)):
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    return rows
+    return clean_dict_rows(rows)
