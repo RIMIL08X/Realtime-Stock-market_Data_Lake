@@ -1,12 +1,11 @@
-services:
-  # 1. PostgreSQL Managed Database
-  - type: postgres
-    name: market-db
+databases:
+  - name: market-db
     databaseName: market_db
     user: market_user
     plan: free
 
-  # 2. FastAPI REST Serving Layer
+services:
+  # 1. FastAPI REST Serving Layer
   - type: web
     name: financial-api
     env: docker
@@ -35,7 +34,7 @@ services:
           name: market-db
           property: password
 
-  # 3. Streamlit Dashboard
+  # 2. Streamlit Dashboard
   - type: web
     name: streamlit-dashboard
     env: docker
