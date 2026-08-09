@@ -207,14 +207,19 @@ def fetch_api_data(endpoint: str, symbol: str, limit: int = 500):
 # ---------------------------------------------------------
 # Hero Banner
 # ---------------------------------------------------------
-st.markdown("""
+api_docs_url = f"{API_BASE_URL}/docs" if API_BASE_URL.startswith("http") else "http://localhost:8000/docs"
+
+st.markdown(f"""
 <div class="hero-banner">
     <div>
         <h1 class="hero-title">⚡ REAL-TIME FINANCIAL DATA LAKE</h1>
         <div class="hero-subtitle">Apache Kafka · Spark Structured Streaming · Medallion Architecture (Bronze / Silver / Gold)</div>
     </div>
-    <div style="text-align: right;">
-        <span style="background: rgba(0, 245, 212, 0.15); color: #00F5D4; padding: 6px 16px; border-radius: 20px; font-weight: 700; border: 1px solid rgba(0, 245, 212, 0.3); font-size: 13px;">
+    <div style="text-align: right; display: flex; gap: 10px; align-items: center;">
+        <a href="{api_docs_url}" target="_blank" style="background: rgba(123, 44, 191, 0.25); color: #E0A9FF; text-decoration: none; padding: 6px 14px; border-radius: 20px; font-weight: 600; border: 1px solid rgba(123, 44, 191, 0.4); font-size: 13px;">
+            🔗 REST API Docs
+        </a>
+        <span style="background: rgba(0, 245, 212, 0.15); color: #00F5D4; padding: 6px 14px; border-radius: 20px; font-weight: 700; border: 1px solid rgba(0, 245, 212, 0.3); font-size: 13px;">
             ● LIVE STREAMING ACTIVE
         </span>
     </div>
