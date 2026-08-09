@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+if not API_BASE_URL.startswith("http://") and not API_BASE_URL.startswith("https://"):
+    API_BASE_URL = f"http://{API_BASE_URL}:8000"
 
 # ---------------------------------------------------------
 # Page Setup
