@@ -13,6 +13,8 @@ services:
     dockerCommand: uvicorn api.main:app --host 0.0.0.0 --port 8000
     plan: free
     envVars:
+      - key: PORT
+        value: 8000
       - key: POSTGRES_HOST
         fromDatabase:
           name: market-db
@@ -42,6 +44,8 @@ services:
     dockerCommand: streamlit run dashboard/app.py --server.port 8501 --server.headless true --server.fileWatcherType none
     plan: free
     envVars:
+      - key: PORT
+        value: 8501
       - key: API_BASE_URL
         fromService:
           type: web
