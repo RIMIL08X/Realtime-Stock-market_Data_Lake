@@ -200,14 +200,16 @@ st.markdown("""
 # ---------------------------------------------------------
 @st.cache_data(ttl=5)
 def fetch_api_data(endpoint: str, symbol: str, limit: int = 500):
-    try:
-        res = requests.get(f"{API_BASE_URL}/{endpoint}/{symbol}?limit={limit}", timeout=5)
-        if res.status_code == 200:
-            data = res.json()
-            if data:
-                return pd.DataFrame(data)
-    except Exception:
-        pass
+    url = f"{API_BASE_URL}/{endpoint}/{symbol}?limit={limit}"
+    for _ in range(3):
+        try:
+            res = requests.get(url, timeout=15)
+            if res.status_code == 200:
+                data = res.json()
+                if data:
+                    return pd.DataFrame(data)
+        except Exception:
+            time.sleep(1)
     return pd.DataFrame()
 
 # ---------------------------------------------------------
