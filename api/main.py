@@ -11,10 +11,29 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 
+import threading
+import time
+
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(name)s: %(message)s')
 logger = logging.getLogger("FinancialDataAPI")
+
+def keep_alive_worker():
+    """Background thread to keep Render web service awake 24/7."""
+    logger.info("Starting Render 24/7 Keep-Alive self-ping background worker...")
+    time.sleep(30)
+    while True:
+        try:
+            url = "https://financial-api-mwp5.onrender.com/health"
+            requests.get(url, timeout=10)
+            logger.info("Keep-alive self-ping sent successfully!")
+        except Exception as e:
+            logger.warning(f"Keep-alive self-ping warning: {e}")
+        time.sleep(600)  # Ping every 10 minutes (before 15-min Render idle limit)
+
+# Start keep-alive daemon thread
+threading.Thread(target=keep_alive_worker, daemon=True).start()
 
 app = FastAPI(
     title="Real-Time Financial Data Lake & Analytics Serving API",
