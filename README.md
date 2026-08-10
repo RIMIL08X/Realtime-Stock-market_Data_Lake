@@ -13,6 +13,16 @@ The platform continuously ingests tick data from live financial market APIs (Twe
 
 ---
 
+## 🖼️ Visual Showcase
+
+### Live Real-Time Dashboard Interface
+![Real-Time Stock Market Data Lake Dashboard](docs/images/dashboard_overview.png)
+
+### Silver Layer Stream Audit & Data Quality Checks
+![Silver Layer Stream Records Dataframe](docs/images/silver_dataframe.png)
+
+---
+
 ## 🌐 Live Production Deployment
 
 | Component | Production URL | Description |
@@ -104,6 +114,16 @@ $$\text{Conditional VaR (CVaR}_{95}\text{)} = \mathbb{E}[R_t \mid R_t \le \text{
 
 ---
 
+## ☁️ Cloud Infrastructure & Observability
+
+### Render Cloud Deployment Console
+![Render Web Services Deployment Console](docs/images/render_console.png)
+
+### Serverless Neon PostgreSQL Monitoring & Query Metrics
+![Neon Serverless PostgreSQL Monitoring Console](docs/images/neon_console.png)
+
+---
+
 ## 🔌 REST API Endpoints Reference
 
 The FastAPI serving layer exposes high-concurrency endpoints returning strict Pydantic v2 JSON models:
@@ -151,6 +171,12 @@ Realtime-Stock-market_Data_Lake/
 │   └── main.py                     # FastAPI REST serving layer with 24/7 keep-alive worker
 ├── dashboard/
 │   └── app.py                      # Multi-page dark glassmorphism Streamlit UI
+├── docs/
+│   └── images/                     # System architecture & interface screenshots
+│       ├── dashboard_overview.png
+│       ├── silver_dataframe.png
+│       ├── render_console.png
+│       └── neon_console.png
 ├── producer/
 │   └── market_data_producer.py    # Twelve Data live API streaming producer
 ├── spark/
