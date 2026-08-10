@@ -201,6 +201,6 @@ Realtime-Stock-market_Data_Lake/
 
 ---
 
-## 👤 Author & License
+## 👤 Author 
 
 Developed by **STORM NITRO** (RIMIL08X) as a portfolio showcase for Data Engineering and Distributed Systems 
