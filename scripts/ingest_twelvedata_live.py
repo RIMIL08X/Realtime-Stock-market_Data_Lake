@@ -22,9 +22,19 @@ def fetch_live_quote(symbol: str):
         logger.error(f"Failed to fetch {symbol} from Twelve Data: {resp.status_code} {resp.text}")
         return None
 
+def get_neon_conn():
+    import time
+    for i in range(5):
+        try:
+            return psycopg2.connect(NEON_URL, connect_timeout=15)
+        except Exception as e:
+            logger.warning(f"Neon DB connection attempt {i+1} waiting for compute wake-up: {e}")
+            time.sleep(3)
+    raise Exception("Failed connecting to Neon DB after 5 retries")
+
 def main():
     logger.info("Starting live Twelve Data ingestion for active portfolio symbols...")
-    conn = psycopg2.connect(NEON_URL)
+    conn = get_neon_conn()
     conn.autocommit = True
     cur = conn.cursor()
 

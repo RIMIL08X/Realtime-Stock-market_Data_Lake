@@ -34,3 +34,26 @@ services:
         value: "8501"
       - key: API_BASE_URL
         value: "https://financial-api-mwp5.onrender.com"
+
+  # 3. Continuous Twelve Data Ingestion Worker
+  - type: worker
+    name: market-producer
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: python scripts/ingest_twelvedata_live.py
+    plan: free
+    envVars:
+      - key: TWELVE_DATA_API_KEY
+        value: "f4d4870f17ac47b5853dae067132eb5e"
+      - key: POSTGRES_HOST
+        value: "ep-still-heart-a6iddbcp.us-west-2.aws.neon.tech"
+      - key: POSTGRES_PORT
+        value: "5432"
+      - key: POSTGRES_DB
+        value: "neondb"
+      - key: POSTGRES_USER
+        value: "neondb_owner"
+      - key: POSTGRES_PASSWORD
+        value: "npg_9mbkxBlLq2CQ"
+      - key: POSTGRES_SSLMODE
+        value: "require"
