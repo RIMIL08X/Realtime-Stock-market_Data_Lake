@@ -26,7 +26,7 @@ def get_neon_conn():
     import time
     for i in range(5):
         try:
-            return psycopg2.connect(NEON_URL, connect_timeout=15)
+            return psycopg2.connect(NEON_URL, sslmode="require", connect_timeout=15)
         except Exception as e:
             logger.warning(f"Neon DB connection attempt {i+1} waiting for compute wake-up: {e}")
             time.sleep(3)
