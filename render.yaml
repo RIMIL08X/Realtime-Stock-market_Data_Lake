@@ -10,7 +10,7 @@ services:
       - key: PORT
         value: "8000"
       - key: POSTGRES_HOST
-        value: "ep-still-heart-a6iddbcp.us-west-2.aws.neon.tech"
+        value: "ep-still-heart-a6iddbcp-pooler.us-west-2.aws.neon.tech"
       - key: POSTGRES_PORT
         value: "5432"
       - key: POSTGRES_DB
@@ -46,7 +46,7 @@ services:
       - key: TWELVE_DATA_API_KEY
         value: "f4d4870f17ac47b5853dae067132eb5e"
       - key: POSTGRES_HOST
-        value: "ep-still-heart-a6iddbcp.us-west-2.aws.neon.tech"
+        value: "ep-still-heart-a6iddbcp-pooler.us-west-2.aws.neon.tech"
       - key: POSTGRES_PORT
         value: "5432"
       - key: POSTGRES_DB

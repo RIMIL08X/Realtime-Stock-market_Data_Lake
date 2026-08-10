@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(na
 logger = logging.getLogger("LiveTwelveDataIngest")
 
 TWELVE_DATA_KEY = os.getenv("TWELVE_DATA_API_KEY", "f4d4870f17ac47b5853dae067132eb5e")
-NEON_URL = "postgresql://neondb_owner:npg_9mbkxBlLq2CQ@ep-still-heart-a6iddbcp.us-west-2.aws.neon.tech/neondb?sslmode=require"
+NEON_URL = "postgresql://neondb_owner:npg_9mbkxBlLq2CQ@ep-still-heart-a6iddbcp-pooler.us-west-2.aws.neon.tech/neondb?sslmode=require"
 SYMBOLS = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"]
 
 def fetch_live_quote(symbol: str):
