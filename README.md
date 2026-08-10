@@ -177,6 +177,4 @@ Realtime-Stock-market_Data_Lake/
 
 ## 👤 Author & License
 
-Developed by **STORM NITRO** (RIMIL08X) as a portfolio showcase for Data Engineering and Distributed Systems Master's applications in Germany.
-
-Licensed under the MIT License.
+Developed by **STORM NITRO** (RIMIL08X) as a portfolio showcase for Data Engineering and Distributed Systems 
