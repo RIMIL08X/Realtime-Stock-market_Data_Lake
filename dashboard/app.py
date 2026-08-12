@@ -56,12 +56,6 @@ st.markdown("""
         70% { box-shadow: 0 0 0 10px rgba(0, 245, 212, 0); }
         100% { box-shadow: 0 0 0 0 rgba(0, 245, 212, 0); }
     }
-    
-    @keyframes pulse-purple {
-        0% { box-shadow: 0 0 0 0 rgba(123, 44, 191, 0.7); }
-        70% { box-shadow: 0 0 0 10px rgba(123, 44, 191, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(123, 44, 191, 0); }
-    }
 
     .live-dot {
         width: 10px;
@@ -75,44 +69,103 @@ st.markdown("""
 
     /* Top Hero Header */
     .hero-banner {
-        background: linear-gradient(135deg, rgba(26, 31, 46, 0.8) 0%, rgba(13, 17, 26, 0.95) 100%);
+        background: linear-gradient(135deg, rgba(26, 31, 46, 0.85) 0%, rgba(13, 17, 26, 0.95) 100%);
         border: 1px solid rgba(0, 245, 212, 0.25);
         backdrop-filter: blur(24px);
         border-radius: 20px;
-        padding: 28px 36px;
+        padding: 24px 32px;
         margin-bottom: 28px;
         box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .hero-header-top {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
     }
 
     .hero-title {
-        font-size: 26px;
+        font-size: 28px;
         font-weight: 900;
-        background: linear-gradient(135deg, #00F5D4 0%, #00F0FF 40%, #7B2CBF 80%, #FF2A6D 100%);
+        background: linear-gradient(135deg, #00F5D4 0%, #00F0FF 45%, #A855F7 85%, #FF2A6D 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin: 0;
         letter-spacing: -0.5px;
         white-space: nowrap;
-        text-shadow: 0 0 30px rgba(0, 245, 212, 0.2);
+        text-shadow: 0 0 30px rgba(0, 245, 212, 0.25);
+    }
+
+    .hero-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .hero-btn-git {
+        background: rgba(255, 255, 255, 0.08);
+        color: #F1F5F9;
+        text-decoration: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        font-size: 13px;
+        transition: all 0.2s ease;
+    }
+    .hero-btn-git:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .hero-btn-docs {
+        background: rgba(123, 44, 191, 0.3);
+        color: #E0A9FF;
+        text-decoration: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 700;
+        border: 1px solid rgba(123, 44, 191, 0.5);
+        font-size: 13px;
+        box-shadow: 0 0 15px rgba(123, 44, 191, 0.3);
+        transition: all 0.2s ease;
+    }
+    .hero-btn-docs:hover {
+        background: rgba(123, 44, 191, 0.5);
+        box-shadow: 0 0 25px rgba(123, 44, 191, 0.5);
+    }
+
+    .hero-btn-live {
+        background: rgba(0, 245, 212, 0.15);
+        color: #00F5D4;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 800;
+        border: 1px solid rgba(0, 245, 212, 0.4);
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
     }
 
     .hero-subtitle {
         color: #94A3B8;
-        font-size: 14px;
-        margin-top: 6px;
+        font-size: 13px;
+        margin-top: 14px;
         font-weight: 500;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
+        flex-wrap: wrap;
     }
 
     .tech-pill {
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 3px 10px;
+        padding: 4px 12px;
         border-radius: 12px;
         font-size: 12px;
         color: #CBD5E1;
@@ -120,12 +173,6 @@ st.markdown("""
     }
 
     /* Flashy Live Ticker Cards */
-    .ticker-row {
-        display: flex;
-        gap: 16px;
-        margin-bottom: 28px;
-    }
-
     .ticker-card {
         flex: 1;
         background: rgba(21, 26, 38, 0.65);
@@ -281,25 +328,25 @@ github_repo_url = "https://github.com/RIMIL08X/Realtime-Stock-market_Data_Lake"
 
 st.markdown(f"""
 <div class="hero-banner">
-    <div>
+    <div class="hero-header-top">
         <h1 class="hero-title">⚡ REAL-TIME FINANCIAL DATA LAKE</h1>
-        <div class="hero-subtitle">
-            <span class="tech-pill">Apache Kafka</span>
-            <span class="tech-pill">PySpark Streaming</span>
-            <span class="tech-pill">Medallion Lakehouse</span>
-            <span class="tech-pill">Yahoo Finance Engine</span>
+        <div class="hero-actions">
+            <a href="{github_repo_url}" target="_blank" class="hero-btn-git">
+                💻 GitHub Code
+            </a>
+            <a href="{api_docs_url}" target="_blank" class="hero-btn-docs">
+                🔗 REST API Docs
+            </a>
+            <span class="hero-btn-live">
+                <span class="live-dot"></span> LIVE YAHOO STREAM
+            </span>
         </div>
     </div>
-    <div style="text-align: right; display: flex; gap: 12px; align-items: center;">
-        <a href="{github_repo_url}" target="_blank" style="background: rgba(255, 255, 255, 0.08); color: #F1F5F9; text-decoration: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 13px;">
-            💻 GitHub Code
-        </a>
-        <a href="{api_docs_url}" target="_blank" style="background: rgba(123, 44, 191, 0.3); color: #E0A9FF; text-decoration: none; padding: 8px 16px; border-radius: 20px; font-weight: 700; border: 1px solid rgba(123, 44, 191, 0.5); font-size: 13px; box-shadow: 0 0 15px rgba(123, 44, 191, 0.3);">
-            🔗 REST API Docs
-        </a>
-        <span style="background: rgba(0, 245, 212, 0.15); color: #00F5D4; padding: 8px 16px; border-radius: 20px; font-weight: 800; border: 1px solid rgba(0, 245, 212, 0.4); font-size: 13px; display: flex; align-items: center;">
-            <span class="live-dot"></span> LIVE YAHOO STREAM ACTIVE
-        </span>
+    <div class="hero-subtitle">
+        <span class="tech-pill">Apache Kafka</span>
+        <span class="tech-pill">PySpark Streaming</span>
+        <span class="tech-pill">Medallion Lakehouse</span>
+        <span class="tech-pill">Yahoo Finance Engine</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
