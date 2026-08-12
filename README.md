@@ -39,7 +39,7 @@ The platform continuously ingests tick data from live financial market streams (
 ```
 +-----------------------------------------------------------------------------------+
 |                               DATA INGESTION LAYER                                |
-|  Twelve Data API (Live Quotes: AAPL, MSFT, GOOGL, AMZN, TSLA)                      |
+|  Yahoo Finance API (Live Quotes: AAPL, MSFT, GOOGL, AMZN, TSLA)                    |
 +-----------------------------------------------------------------------------------+
                                          |
                                          v
@@ -178,7 +178,7 @@ Realtime-Stock-market_Data_Lake/
 │       ├── render_console.png
 │       └── neon_console.png
 ├── producer/
-│   └── market_data_producer.py    # Twelve Data live API streaming producer
+│   └── market_data_producer.py    # Yahoo Finance live market streaming producer
 ├── spark/
 │   ├── bronze/                     # Raw Kafka -> Postgres Bronze ingestion
 │   ├── silver/                     # Data cleansing & DLQ validation transformer
@@ -190,7 +190,7 @@ Realtime-Stock-market_Data_Lake/
 │   └── 04_gold_tables.sql          # DDL: 5 Gold analytical metric tables
 ├── scripts/
 │   ├── compute_gold_metrics.py     # SQL-native Gold layer metric engine
-│   ├── ingest_twelvedata_live.py   # Live market API ingestion runner
+│   ├── ingest_yfinance_live.py     # Live Yahoo Finance market ingestion runner
 │   ├── init_remote_db.py           # Database DDL initialization utility
 │   └── seed_neon.py                # Cloud database seeder
 ├── Dockerfile                      # Production Python 3.12 container definition
