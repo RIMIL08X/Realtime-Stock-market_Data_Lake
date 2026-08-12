@@ -9,7 +9,7 @@
 
 A production-grade, distributed real-time financial data lake and analytical stream processing platform built with **Apache Kafka**, **PySpark Structured Streaming**, and **PostgreSQL (Neon Cloud)**, organized around an enterprise **Medallion Data Architecture (Bronze → Silver → Gold)**.
 
-The platform continuously ingests tick data from live financial market APIs (Twelve Data), executes schema enforcement, data quality validation, and computes quantitative risk & returns metrics in real time, serving analytics through a high-performance **FastAPI** REST backend and an interactive **Streamlit** dashboard.
+The platform continuously ingests tick data from live financial market streams (**Yahoo Finance**), executes schema enforcement, data quality validation, and computes quantitative risk & returns metrics in real time, serving analytics through a high-performance **FastAPI** REST backend and an interactive **Streamlit** dashboard.
 
 ---
 

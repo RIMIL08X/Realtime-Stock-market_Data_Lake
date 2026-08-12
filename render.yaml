@@ -35,16 +35,14 @@ services:
       - key: API_BASE_URL
         value: "https://financial-api-mwp5.onrender.com"
 
-  # 3. Continuous Twelve Data Ingestion Worker
+  # 3. Continuous Yahoo Finance Live Streaming Worker
   - type: worker
     name: market-producer
     env: docker
     dockerfilePath: ./Dockerfile
-    dockerCommand: python scripts/ingest_twelvedata_live.py
+    dockerCommand: python scripts/ingest_yfinance_live.py --worker
     plan: free
     envVars:
-      - key: TWELVE_DATA_API_KEY
-        value: "f4d4870f17ac47b5853dae067132eb5e"
       - key: POSTGRES_HOST
         value: "ep-still-heart-a6iddbcp-pooler.us-west-2.aws.neon.tech"
       - key: POSTGRES_PORT
@@ -57,3 +55,5 @@ services:
         value: "npg_9mbkxBlLq2CQ"
       - key: POSTGRES_SSLMODE
         value: "require"
+      - key: RUN_WORKER
+        value: "true"
