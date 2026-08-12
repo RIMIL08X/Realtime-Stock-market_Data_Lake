@@ -88,13 +88,14 @@ st.markdown("""
     }
 
     .hero-title {
-        font-size: 34px;
+        font-size: 26px;
         font-weight: 900;
         background: linear-gradient(135deg, #00F5D4 0%, #00F0FF 40%, #7B2CBF 80%, #FF2A6D 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin: 0;
         letter-spacing: -0.5px;
+        white-space: nowrap;
         text-shadow: 0 0 30px rgba(0, 245, 212, 0.2);
     }
 
