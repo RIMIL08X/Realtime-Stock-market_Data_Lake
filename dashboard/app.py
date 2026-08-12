@@ -28,7 +28,7 @@ elif not API_BASE_URL.startswith("http://") and not API_BASE_URL.startswith("htt
 # Streamlit Page Setup
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="Quantum Financial Data Lake | Real-Time Market Engine",
+    page_title="Real-Time Stock Market Data Lake | Production Stream Engine",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -281,7 +281,7 @@ github_repo_url = "https://github.com/RIMIL08X/Realtime-Stock-market_Data_Lake"
 st.markdown(f"""
 <div class="hero-banner">
     <div>
-        <h1 class="hero-title">⚡ QUANTUM FINANCIAL DATA LAKE</h1>
+        <h1 class="hero-title">⚡ REAL-TIME FINANCIAL DATA LAKE</h1>
         <div class="hero-subtitle">
             <span class="tech-pill">Apache Kafka</span>
             <span class="tech-pill">PySpark Streaming</span>
