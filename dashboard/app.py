@@ -320,6 +320,12 @@ def fetch_api_data(endpoint: str, symbol: str, limit: int = 500):
             time.sleep(1)
     return pd.DataFrame()
 
+# Auto wake-up ping to trigger live Yahoo Finance ingestion on dashboard load
+try:
+    requests.get(f"{API_BASE_URL}/wake", timeout=4)
+except Exception:
+    pass
+
 # ---------------------------------------------------------
 # Hero Banner Header
 # ---------------------------------------------------------
@@ -496,7 +502,19 @@ if view_tab == "📊 Live Market OHLC Ticks":
         st.plotly_chart(fig, use_container_width=True)
 
         with st.expander("🔍 Inspect Raw Silver Stream Records (PostgreSQL Database Table)"):
-            st.dataframe(df_ticks.tail(100), use_container_width=True)
+            col_exp1, col_exp2 = st.columns([3, 1])
+            with col_exp2:
+                if st.button("🔄 Refresh Live Stream Ticks", key="btn_refresh_ticks", use_container_width=True):
+                    try:
+                        requests.get(f"{API_BASE_URL}/wake", timeout=10)
+                        st.cache_data.clear()
+                        st.success("⚡ Live Yahoo Finance ingestion triggered! Fetching fresh records...")
+                        time.sleep(1.5)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error triggering wake-up ingestion: {e}")
+            
+            st.dataframe(df_ticks.sort_values("timestamp", ascending=False), use_container_width=True)
     else:
         st.info(f"Awaiting streaming data for {selected_symbol}...")
 

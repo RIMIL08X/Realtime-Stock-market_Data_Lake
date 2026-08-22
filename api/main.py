@@ -1,8 +1,12 @@
 import os
+import sys
 import logging
 from typing import List, Optional
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
+import threading
+import time
+import requests
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,26 +15,54 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 
-import threading
-import time
+# Ensure scripts directory is on sys.path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+try:
+    from scripts.ingest_yfinance_live import run_ingestion_cycle
+except ImportError:
+    run_ingestion_cycle = None
 
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(name)s: %(message)s')
 logger = logging.getLogger("FinancialDataAPI")
 
+# Global lock to prevent concurrent duplicate ingestion runs
+ingestion_lock = threading.Lock()
+last_auto_ingest_time = 0
+
+def auto_ingest_if_needed(force: bool = False):
+    """Triggers live Yahoo Finance ingestion cycle if database is stale (> 60s) or forced upon wake-up."""
+    global last_auto_ingest_time
+    now = time.time()
+    
+    # Rate-limit automatic wake-up ingestion to once every 30 seconds
+    if not force and (now - last_auto_ingest_time < 30):
+        return
+
+    if run_ingestion_cycle and ingestion_lock.acquire(blocking=False):
+        try:
+            logger.info("⚡ Render wake-up detected! Executing instant live Yahoo Finance ingestion cycle...")
+            run_ingestion_cycle()
+            last_auto_ingest_time = time.time()
+            logger.info("✅ Wake-up ingestion completed successfully!")
+        except Exception as e:
+            logger.error(f"Error during wake-up ingestion: {e}")
+        finally:
+            ingestion_lock.release()
+
 def keep_alive_worker():
-    """Background thread to keep Render web service awake 24/7."""
+    """Background thread to keep Render web service awake and trigger periodic ingestion."""
     logger.info("Starting Render 24/7 Keep-Alive self-ping background worker...")
-    time.sleep(30)
+    time.sleep(15)
     while True:
         try:
-            url = "https://financial-api-mwp5.onrender.com/health"
-            requests.get(url, timeout=10)
-            logger.info("Keep-alive self-ping sent successfully!")
+            url = "https://financial-api-mwp5.onrender.com/wake"
+            requests.get(url, timeout=15)
+            logger.info("Keep-alive self-ping & wake-up refresh sent successfully!")
         except Exception as e:
             logger.warning(f"Keep-alive self-ping warning: {e}")
-        time.sleep(600)  # Ping every 10 minutes (before 15-min Render idle limit)
+        time.sleep(300)  # Self-ping every 5 minutes
 
 # Start keep-alive daemon thread
 threading.Thread(target=keep_alive_worker, daemon=True).start()
@@ -50,13 +82,12 @@ app.add_middleware(
 )
 
 def get_db_connection():
-    pg_host = os.getenv("POSTGRES_HOST", "localhost")
-    pg_port = int(os.getenv("POSTGRES_PORT", "5433"))
-    pg_db = os.getenv("POSTGRES_DB", "market_db")
-    pg_user = os.getenv("POSTGRES_USER", "market_user")
-    pg_pass = os.getenv("POSTGRES_PASSWORD", "market_pass")
+    pg_host = os.getenv("POSTGRES_HOST", "ep-still-heart-a6iddbcp-pooler.us-west-2.aws.neon.tech")
+    pg_port = int(os.getenv("POSTGRES_PORT", "5432"))
+    pg_db = os.getenv("POSTGRES_DB", "neondb")
+    pg_user = os.getenv("POSTGRES_USER", "neondb_owner")
+    pg_pass = os.getenv("POSTGRES_PASSWORD", "npg_9mbkxBlLq2CQ")
     
-    # Auto-detect cloud SSL requirement (Neon / Render external require SSL)
     sslmode = os.getenv("POSTGRES_SSLMODE")
     if not sslmode:
         if "neon.tech" in pg_host or "render.com" in pg_host:
@@ -143,11 +174,24 @@ class RiskResponse(BaseModel):
     cvar_95: Optional[float] = None
     calculated_at: datetime
 
+@app.get("/wake")
+def wake_and_ingest():
+    """Explicit endpoint to wake up service and immediately ingest live Yahoo Finance ticks."""
+    threading.Thread(target=auto_ingest_if_needed, kwargs={"force": True}, daemon=True).start()
+    return {
+        "status": "wake_triggered",
+        "message": "Live Yahoo Finance ingestion cycle triggered on wake-up!",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
 @app.get("/health")
 def health_check():
+    # Trigger wake-up ingestion asynchronously if DB connection is healthy
+    threading.Thread(target=auto_ingest_if_needed, kwargs={"force": False}, daemon=True).start()
+    
     pg_host = os.getenv("POSTGRES_HOST", "localhost")
-    pg_db = os.getenv("POSTGRES_DB", "market_db")
-    pg_user = os.getenv("POSTGRES_USER", "market_user")
+    pg_db = os.getenv("POSTGRES_DB", "neondb")
+    pg_user = os.getenv("POSTGRES_USER", "neondb_owner")
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -160,7 +204,7 @@ def health_check():
             "connected_host": pg_host,
             "connected_db": pg_db,
             "connected_user": pg_user,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
         return {
@@ -172,6 +216,9 @@ def health_check():
 
 @app.get("/ticks/{symbol}", response_model=List[TickResponse])
 def get_stock_ticks(symbol: str, limit: int = Query(default=100, le=1000)):
+    # Trigger auto ingestion if ticks table hasn't been updated recently
+    threading.Thread(target=auto_ingest_if_needed, kwargs={"force": False}, daemon=True).start()
+    
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
