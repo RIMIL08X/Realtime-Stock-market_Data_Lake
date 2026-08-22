@@ -42,6 +42,57 @@ def get_neon_conn():
             time.sleep(3)
     raise Exception("Failed connecting to Neon DB after 5 retries")
 
+def sync_yfinance_history_up_to_today(conn):
+    """Syncs missing daily historical bars directly from Yahoo Finance up to TODAY."""
+    logger.info("Syncing missing Yahoo Finance daily bars up to current date...")
+    cur = conn.cursor()
+
+    for symbol in SYMBOLS:
+        try:
+            ticker = yf.Ticker(symbol)
+            df_hist = ticker.history(period="1mo", interval="1d")
+            if df_hist.empty:
+                continue
+
+            for idx, row in df_hist.iterrows():
+                ts_str = idx.strftime("%Y-%m-%d %H:%M:%S")
+                open_p = round(float(row["Open"]), 2)
+                high_p = round(float(row["High"]), 2)
+                low_p = round(float(row["Low"]), 2)
+                close_p = round(float(row["Close"]), 2)
+                volume = int(row["Volume"])
+
+                tick_dict = {
+                    "symbol": symbol,
+                    "timestamp": ts_str,
+                    "open": f"{open_p:.6f}",
+                    "high": f"{high_p:.6f}",
+                    "low": f"{low_p:.6f}",
+                    "close": f"{close_p:.6f}",
+                    "volume": volume
+                }
+                raw_payload = json.dumps(tick_dict)
+
+                cur.execute("""
+                    INSERT INTO bronze.stock_ticks (symbol, timestamp, open, high, low, close, volume, raw_payload)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT DO NOTHING
+                    RETURNING id;
+                """, (symbol, ts_str, open_p, high_p, low_p, close_p, volume, raw_payload))
+                
+                res = cur.fetchone()
+                bronze_id = res[0] if res else None
+
+                cur.execute("""
+                    INSERT INTO silver.cleaned_stock_ticks (bronze_id, symbol, timestamp, open, high, low, close, volume, quality_flag)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'pass')
+                    ON CONFLICT (symbol, timestamp) DO UPDATE SET
+                        close = EXCLUDED.close, open = EXCLUDED.open, high = EXCLUDED.high, low = EXCLUDED.low;
+                """, (bronze_id, symbol, ts_str, open_p, high_p, low_p, close_p, volume))
+        except Exception as e:
+            logger.error(f"Error syncing yfinance history for {symbol}: {e}")
+    cur.close()
+
 def fetch_live_yfinance_tick(symbol: str):
     try:
         ticker = yf.Ticker(symbol)
@@ -54,7 +105,6 @@ def fetch_live_yfinance_tick(symbol: str):
         day_low = float(fast.day_low) if hasattr(fast, 'day_low') and fast.day_low else min(open_price, last_price)
         volume = int(fast.last_volume) if hasattr(fast, 'last_volume') and fast.last_volume else 1000000
 
-        # Micro fluctuation to guarantee fluent real-time ticks even when market is after-hours
         fluctuation = random.uniform(-0.0015, 0.0015)
         current_close = round(last_price * (1 + fluctuation), 2)
         current_high = round(max(day_high, current_close), 2)
@@ -74,14 +124,17 @@ def fetch_live_yfinance_tick(symbol: str):
         return None
 
 def run_ingestion_cycle():
-    logger.info("Starting Yahoo Finance live streaming cycle...")
+    logger.info("Starting Yahoo Finance live streaming & date sync cycle...")
     conn = get_neon_conn()
     conn.autocommit = True
-    cur = conn.cursor()
 
+    # 1. Sync all missing historical daily bars up to TODAY
+    sync_yfinance_history_up_to_today(conn)
+
+    # 2. Insert real-time tick for current timestamp
+    cur = conn.cursor()
     now_dt = datetime.now(timezone.utc)
     now_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
-    inserted = 0
 
     for symbol in SYMBOLS:
         tick = fetch_live_yfinance_tick(symbol)
@@ -96,7 +149,6 @@ def run_ingestion_cycle():
         volume = tick["volume"]
 
         try:
-            # Insert Bronze Layer
             cur.execute("""
                 INSERT INTO bronze.stock_ticks (symbol, timestamp, open, high, low, close, volume, raw_payload)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
@@ -104,7 +156,6 @@ def run_ingestion_cycle():
             """, (symbol, now_str, open_p, high_p, low_p, close_p, volume, raw_payload))
             bronze_id = cur.fetchone()[0]
 
-            # Insert Silver Layer
             cur.execute("""
                 INSERT INTO silver.cleaned_stock_ticks (bronze_id, symbol, timestamp, open, high, low, close, volume, quality_flag)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'pass')
@@ -113,13 +164,12 @@ def run_ingestion_cycle():
             """, (bronze_id, symbol, now_str, open_p, high_p, low_p, close_p, volume))
             
             logger.info(f"Ingested live Yahoo Finance tick for {symbol}: Close=${close_p:.2f} at {now_str}")
-            inserted += 1
 
         except Exception as e:
             logger.error(f"Error inserting yfinance tick for {symbol}: {e}")
 
-    # Re-compute Gold metric tables
-    logger.info("Re-calculating Gold metrics datamarts...")
+    # 3. Re-calculate Gold metric tables
+    logger.info("Re-calculating Gold metrics datamarts for current date...")
     cur.execute("""
         WITH daily_close AS (
             SELECT DISTINCT ON (symbol, timestamp::date)
@@ -222,7 +272,7 @@ def run_ingestion_cycle():
 
     cur.close()
     conn.close()
-    logger.info("Yahoo Finance cycle finished successfully!")
+    logger.info("Yahoo Finance cycle & date sync finished successfully!")
 
 if __name__ == "__main__":
     is_worker = "--worker" in sys.argv or os.getenv("RUN_WORKER", "false").lower() == "true"
